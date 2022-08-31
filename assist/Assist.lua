@@ -1,6 +1,6 @@
 _addon.name = 'Assist'
 _addon.author = 'DiscipleOfEris'
-_addon.version = '1.1.0'
+_addon.version = '1.1.1'
 _addon.command = 'assist'
 
 require('tables')
@@ -72,7 +72,7 @@ function set_target(target_id)
   local current = windower.ffxi.get_mob_by_target('t')
   if not target or (current and target.id == current.id) then return end
   
-  if target.index < 512 and settings.delock then
+  if target.index < 1024 and settings.delock then
     delock_id = target_id
   end
   
