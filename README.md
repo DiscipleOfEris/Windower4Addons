@@ -1,5 +1,7 @@
 # Windower4Addons
-Addons for FFXI using Windower4 that I (DiscipleOfEris) have written or modified.
+Addons for FFXI using Windower4 that I (DiscipleOfEris) have written or modified. Most of these are written for
+compatibility with Era (a private FFXI server) in mind. It is currently using an old version of the FFXI client.
+These addons are specifically prefixed with `Era` to distinguish them.
 
 
 ## Installation
