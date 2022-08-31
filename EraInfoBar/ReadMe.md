@@ -1,6 +1,6 @@
 # EraInfoBar
-FFXI Windower addon that displays a configurable bar showing information on your targets. Modified for more accuracy on
-Era.
+FFXI Windower addon that displays a configurable bar showing information on your targets. Modified from Kenshi's
+original addon for compatibility and more accuracy on Era.
 
 
 ## Installation
