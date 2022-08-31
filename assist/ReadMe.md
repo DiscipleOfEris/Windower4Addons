@@ -43,4 +43,4 @@ Set the target to the mob/player specified by <target_id>.
     //assist delock off
     //assist delock
 
-Enable/disable/toggle the delock feature. Prevents the normal /lockon effect causes by /assist.
+Enable/disable/toggle the delock feature. Prevents the normal /lockon effect caused by /assist.
