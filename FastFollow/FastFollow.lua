@@ -146,7 +146,7 @@ windower.register_event('addon command', function(command, ...)
     local dist = tonumber(args[1])
     if not dist then return end
     
-    dist = math.min(math.max(0.2, dist), 10)
+    dist = math.min(math.max(0.2, dist), 50.0)
     
     settings.min = dist
     min_dist = settings.min^2
