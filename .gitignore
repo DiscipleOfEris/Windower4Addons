@@ -44,3 +44,46 @@ luac.out
 
 # User config files
 */data/*
+
+# Other Windower addons
+libs/*
+autocontrol/*
+autoenterkey/*
+autojoin/*
+AutoRA/*
+azureSets/*
+battlemod/*
+bluguide/*
+cancel/*
+checkparam/*
+Clock/*
+ConsoleBG/*
+Debuffed/*
+DistancePlus/*
+DressUp/*
+enternity/*
+eval/*
+FastCS/*
+findAll/*
+GearSwap/*
+gmmode/*
+HomePoint/*
+InfoBar/*
+instaLS/*
+itemizer/*
+JobChange/*
+macrochanger/*
+MyHome/*
+PacketViewer/*
+PetTP/*
+plugin_manager/*
+pointwatch/*
+remember/*
+renamer/*
+scoreboard/*
+send/*
+SetTarget/*
+shortcuts/*
+Silence/*
+timestamp/*
+TParty/*
