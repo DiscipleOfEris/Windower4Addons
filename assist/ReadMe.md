@@ -15,8 +15,8 @@ manually or add a line to your `scripts/init.txt`:
 
 
 ## Commands
-Note `text1|text2` means choose one of `text1` *or* `text2`. Do not actually
-write the `|` character. Similarly, `[text]` means `text` is optional.
+Note that `<text>` means user choice. Do not actually write `<` and `>`. Similarly, `[text]` means that `text` is
+optional. `text1|text2` means choose one of `text1` *or* `text2`.
 
 #### [help]
 
