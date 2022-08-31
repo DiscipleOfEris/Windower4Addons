@@ -25,3 +25,5 @@ folder. Directly inside that folder should be a file called `SendTarget.lua`.
 Then in your `scripts/init.txt`:
 
     lua load SendTarget
+
+See the individual addons for more detailed instructions.
