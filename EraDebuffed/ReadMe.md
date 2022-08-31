@@ -1,6 +1,6 @@
 # EraDebuffed
 FFXI Windower addon that tracks and displays debuffs on your current target. Filters are available to customise which
-debuffs are shown. Modified for compatibility with Era.
+debuffs are shown. Modified from Xathe's original addon for compatibility with Era.
 
 
 ## Installation
