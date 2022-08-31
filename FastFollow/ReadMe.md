@@ -64,7 +64,7 @@ Choose how long to wait for following to correctly stop before doing the action.
 #### min \<distance\>
     //ffo min <distance>
 
-Set how closely to follow. Minimum 0.2 yalms, maximum 10.0 yalms.
+Set how closely to follow. Minimum 0.2 yalms, maximum 50.0 yalms.
 
 #### zone \<duration\>
     //ffo zone <duration>
