@@ -21,16 +21,17 @@ manually or add a line to your `scripts/init.txt`:
 You can use `//fastfollow` or `//ffo`. Note that `<text>` means user choice. Do not actually write `<` and `>`.
 Similarly, `[text]` means that `text` is optional. `text1|text2` means choose one of `text1` *or* `text2`.
 
-#### \<character_name\>
+#### [follow] \<character_name\>
 
     //ffo Kaiyra
-    //ffo Maruru
+    //ffo follow Maruru
 
 Will cause the current character to follow the specified character.
 
-#### me
+#### followme
 
-    //ffo me 
+    //ffo followme
+    //ffo me
 
 Cause all other characters to follow this one.
 
@@ -63,7 +64,7 @@ Choose how long to wait for following to correctly stop before doing the action.
 #### min \<distance\>
     //ffo min <distance>
 
-Set how closely to follow. Minimum 0.2 yalms.
+Set how closely to follow. Minimum 0.2 yalms, maximum 10.0 yalms.
 
 #### zone \<duration\>
     //ffo zone <duration>
