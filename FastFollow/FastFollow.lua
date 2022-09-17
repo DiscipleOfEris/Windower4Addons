@@ -1,6 +1,6 @@
 _addon.name = 'FastFollow'
 _addon.author = 'DiscipleOfEris'
-_addon.version = '1.2.2'
+_addon.version = '1.2.3'
 _addon.commands = {'fastfollow', 'ffo'}
 
 -- TODO: pause on ranged attacks.
@@ -235,12 +235,14 @@ windower.register_event('prerender', function()
       running = false
       return
     end
-    if not target and running then
-      windower.ffxi.run(false)
-      running = false
+    if not target then
+      if running then
+        windower.ffxi.run(false)
+        running = false
+      end
       return
     end
-    
+
     distSq = distanceSquared(target, self)
     len = math.sqrt(distSq)
     if len < 1 then len = 1 end
