@@ -17,7 +17,7 @@ manually or add a line to your `scripts/init.txt`:
 ## Commands
 Note that `<text>` means user choice. Do not actually write `<` and `>`. Similarly, `[text]` means that `text` is
 optional. `text1|text2` means choose one of `text1` *or* `text2`.
-`@shortcut` can be one of `@all`, `@self`, `@others`, or `@<job>` (e.g. `@blm`).
+`@<shortcut>` can be one of `@all`, `@self`, `@others`, or `@<job>` (e.g. `@blm`).
 
 #### [help]
 
@@ -33,7 +33,7 @@ Display the usage information.
 
 Set your target to that of the specified alt.
 
-#### me [@shortcut|\<char_name\>]
+#### me [\<char_name\>|@\<shortcut\>]
 
     //assist me
 
@@ -55,7 +55,7 @@ Enable/disable/toggle delock on this character. Prevents the normal `/lockon` ef
 
 Enable/disable/toggle verbose mode. Displays more messages while the addon is active.
 
-#### attack|a [\<@shortcut|char_name\>]
+#### attack|a [\<char_name\>|@\<shortcut\>]
 
     //assist attack
     //assist a @others
@@ -64,7 +64,7 @@ Enable/disable/toggle verbose mode. Displays more messages while the addon is ac
 
 Tell alts (default `@all`) to attack your current target.
 
-#### disengage|d [\<@shortcut|char_name\>]
+#### disengage|d [\<char_name\>|@\<shortcut\>]
 
     //assist disengage
     //assist d @blm
@@ -79,7 +79,7 @@ Tell alts (default `@all`) to disengage.
 
 Maintain your attack target to be the same as the specified alt.
 
-#### attackwithme|awm [\<@shortcut|char_name\>]
+#### attackwithme|awm [\<char_name\>|@\<shortcut\>]
 
     //assist attackwithme
     //assist awm @war
@@ -87,7 +87,7 @@ Maintain your attack target to be the same as the specified alt.
 
 Tell the specified alt(s) (default `@others`) to maintain their attack target with yours.
 
-#### stopattack|sa [\<@shortcut|char_name\>]
+#### stopattack|sa [\<char_name\>|@\<shortcut\>]
 
     //assist stopattack
     //assist sa @war
@@ -95,7 +95,7 @@ Tell the specified alt(s) (default `@others`) to maintain their attack target wi
 
 Tell the specified alt(s) (default `@all`) to stop doing `attackwith`.
 
-#### target|t \<@shortcut|char_name\> \<target_id\>
+#### target|t \<char_name\>|@\<shortcut\> \<target_id\>
 
     //assist target @self 17027458
     //assist t Maruru 17027458
@@ -109,7 +109,7 @@ Tell the specified alt(s) to target the entity with the specified id.
 
 Maintain your target to be the same as the specified alt.
 
-#### targetwithme|twm [\<@shortcut|char_name\>]
+#### targetwithme|twm [\<char_name\>|@\<shortcut\>]
 
     //assist targetwithme
     //assist twm @war
@@ -117,7 +117,7 @@ Maintain your target to be the same as the specified alt.
 
 Tell the specified alt(s) (default `@others`) to maintain their target with yours.
 
-#### stoptarget|st [\<@shortcut|char_name\>]
+#### stoptarget|st [\<char_name\>|@\<shortcut\>]
 
     //assist stoptarget
     //assist st @blm
