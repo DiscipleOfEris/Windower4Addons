@@ -215,7 +215,7 @@ windower.register_event('addon command', function(command, ...)
             mirror_settings.followers = {}
             windower.send_ipc_message('stop'..mirror_type..'ingwithme @all '..string.lower(player.name))
         end
-        `
+        
         windower.send_ipc_message(mirror_type..'with '..char_name..' '..string.lower(player.name))
         
         log('This character will now start '..mirror_type..'ing with '..char_name..'.')
