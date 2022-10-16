@@ -63,7 +63,7 @@ windower.register_event('addon command', function(command, ...)
     -- Display the addon help.
     if not command or command == 'help' then
         log('Make alts assist you, or attack when you attack.')
-        log('This addon supports the same @shortcuts as send (e.g. @all, @others, @job). Some commands are more effective if used with the send addon.')
+        log('This addon supports the same @shortcuts as send (e.g. @all, @others, @job).')
         log('//assist <char_name>                          : Set your target to that of the specified alt.')
         log('//assist me [<@shortcut|char_name>]           : Tell the specified alt(s) (default @others) to set their target to yours.')
         log('//assist delock [all|target|attack] on|off|t  : Enable/disable/toggle delock on this character. Prevents the normal /lockon effect from assist/attack.')
