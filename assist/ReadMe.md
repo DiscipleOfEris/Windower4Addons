@@ -14,6 +14,16 @@ manually or add a line to your `scripts/init.txt`:
     lua load Assist
 
 
+## Usage
+To get all your other alts to target your target, use `//assist me`. If you want all your characters to *attack* your
+target, use either `//assist attack` for a one-time command, or `//assist awm` so your alts will change their attack
+target whenever you do. Note that the `attackwithme` mode tells your alts to copy you *when you do something.* They
+might fail to copy you for the same reasons your own action might fail, such as their weapon swing being on cooldown.
+If that happens, you can just use the normal "Switch Target" command and select the enemy you're already attacking.
+
+For anything more complicated, see the commands below.
+
+
 ## Commands
 Note that `<text>` means user choice. Do not actually write `<` and `>`. Similarly, `[text]` means that `text` is
 optional. `text1|text2` means choose one of `text1` *or* `text2`.
