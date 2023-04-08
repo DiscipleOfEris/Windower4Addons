@@ -28,9 +28,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 _addon.name = 'EraJobChange'
 _addon.author = 'Sammeh, DiscipleOfEris'
-_addon.version = '1.1.0'
+_addon.version = '1.1.1'
 _addon.commands = {'jc', 'jobchange'}
 
+-- EraJobChange 1.1.1 Reduce the number of intermediary job changes when there's a conflict.
 -- EraJobChange 1.1.0 Enable job change from any town on Era. Change main/sub with a single command.
 -- jobchange 1.0.3 Code clean-up
 -- jobchange 1.0.2 added 'reset' command to simply reset to existing job.  Changes sub job to a random starting job and back.
@@ -60,10 +61,50 @@ windower.register_event('addon command', function(command, ...)
     end
     local main_sub = ''
     if command:find('/') then
-        pos = command:find('/')
-        main = command:sub(1, pos-1)
-        sub = command:sub(pos+1)
-        windower.send_command('jc main '..main..'; wait 0.5; jc sub '..sub)
+        local pos = command:find('/')
+        local new_main = command:sub(1, pos-1):upper()
+        local new_sub = command:sub(pos+1):upper()
+        
+        if new_main == new_sub then
+            windower.add_to_chat(4, "JobChange: Cannot have same main and sub jobs")
+            return
+        end
+        
+        local conflictMain = find_conflict(new_main, self)
+        local conflictSub = find_conflict(new_sub, self)
+        new_main = find_job(new_main, self)
+        new_sub = find_job(new_sub, self)
+        
+        if conflictMain and conflictSub then
+            local temp_job = find_temp_job(self)
+            windower.add_to_chat(4, "JobChange: Conflict with both")
+            
+            if conflictMain == 'main' then -- e.g. BLM/WHM -> BLM/WHM
+                jobchange(temp_job, 'sub')
+                jobchange(new_sub, 'sub')
+            else                           -- e.g. BLM/WHM -> WHM/BLM
+                jobchange(temp_job, 'sub')
+                jobchange(new_main, 'main')
+                jobchange(new_sub, 'sub')
+            end
+        elseif conflictMain then
+            if conflictMain == 'main' then -- e.g. BLM/WHM -> BLM/SCH
+                jobchange(new_sub, 'sub')
+            else                           -- e.g. BLM/WHM -> WHM/SCH
+                jobchange(new_sub, 'sub')
+                jobchange(new_main, 'main')
+            end
+        elseif conflictSub then
+            if conflictSub == 'sub' then   -- e.g. BLM/WHM -> SCH/WHM
+                jobchange(new_main, 'main')
+            else                           -- e.g. BLM/WHM -> SCH/BLM
+                jobchange(new_main, 'main')
+                jobchange(new_sub, 'sub')
+            end
+        else                               -- e.g. BLM/WHM -> THF/DNC
+            jobchange(new_main, 'main')
+            jobchange(new_sub, 'sub')
+        end
         return
     elseif command:lower() == 'main' then
         main_sub = 'main'
@@ -86,7 +127,7 @@ windower.register_event('addon command', function(command, ...)
             if not conflict then 
                 jobchange(jobid,main_sub)
             else
-                local temp_job = find_temp_job(self)            
+                local temp_job = find_temp_job(self)
                 windower.add_to_chat(4,"JobChange: Conflict with "..conflict)
                 if main_sub == conflict then 
                     jobchange(temp_job,main_sub)
@@ -130,7 +171,7 @@ end
 function find_job(job,self)
     local jobLevel = self.jobs[job:upper()]
     for index,value in pairs(res.jobs) do
-        if value.ens:lower() == job and jobLevel > 0 then 
+        if value.ens == job:upper() and jobLevel > 0 then 
             return index
         end
     end
