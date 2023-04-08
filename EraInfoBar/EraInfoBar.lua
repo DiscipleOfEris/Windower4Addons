@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.]]
 
 _addon.name = 'EraInfoBar'
 _addon.author = 'DiscipleOfEris'
-_addon.version = '1.1.0'
+_addon.version = '1.1.1'
 _addon.commands = {'ib', 'infobar'}
 
 config = require('config')
@@ -112,91 +112,91 @@ function get_notes(target)
 end
 
 function get_target(index)
-  local player = windower.ffxi.get_player()
-  local target = windower.ffxi.get_mob_by_target('st') or windower.ffxi.get_mob_by_target('t') or player
-  if target.id == last_target_id then
-    if target.id == player.id then
-      infobar.main_job = player.main_job
-      infobar.main_job_level = player.main_job_level
-      infobar.sub_job = player.sub_job
-      infobar.sub_job_level = player.sub_job_level
-      box:update(infobar)
+    local player = windower.ffxi.get_player()
+    local target = windower.ffxi.get_mob_by_target('st') or windower.ffxi.get_mob_by_target('t') or player
+    if target.id == last_target_id then
+        if target.id == player.id then
+            infobar.main_job = player.main_job
+            infobar.main_job_level = player.main_job_level
+            infobar.sub_job = player.sub_job
+            infobar.sub_job_level = player.sub_job_level
+            box:update(infobar)
+        end
+        return
     end
-    return
-  end
-  last_target_id = target.id
-  infobar.name = target.name
-  infobar.id = target.id
-  infobar.index = target.index
-  infobar.notes = get_notes(target.name)
-  if index == 0 or index == player.index then
-    infobar.main_job = player.main_job
-    infobar.main_job_level = player.main_job_level
-    infobar.sub_job = player.sub_job
-    infobar.sub_job_level = player.sub_job_level
-    box:color(255,255,255)
-    box:bold(false)
-    box:text(settings.NoTarget)
-    box:update(infobar)
-  else
-    -- spawn_type is no longer being set the same way.
-    -- Instead, use index.
-    -- index < 1024 (0x400) means either mob, npc, or ship.
-    -- index < 1792 (0x700) means pc.
-    -- index < 2048 (0x800) means pet, trust, or fellow
-    
-    if target.index < 1024 then -- mob or NPC
-      mob = Mob:new(target.id)
-      if mob then -- is a mob
-        box:color(255,255,128)
-        
-        if target_idx_table:containskey(target.index) then
-          local t = target_idx_table[target.index]
-          if os.clock() < t.expires then Mob.setLvl(mob, t.lvl)
-          elseif settings.shouldScan and os.clock() >= t.expires then scan() end
-        elseif settings.shouldScan then scan() end
-        
-        box:bold(mob.aggressive and Mob.canAggro(mob, player.main_job_level))
-        box:text(settings.TargetMOB)
-        box:update(mob)
-      else -- is an NPC
-        box:color(128,255,128)
-        box:text(settings.TargetNPC)
-        box:bold(false)
-        box:update(infobar)
-      end
-    else --if target.index < 1792 then -- is a PC
-      box:bold(false)
-      if target.spawn_type == 1 then
+    last_target_id = target.id
+    infobar.name = target.name
+    infobar.id = target.id
+    infobar.index = target.index
+    infobar.notes = get_notes(target.name)
+    if index == 0 or index == player.index then
+        infobar.main_job = player.main_job
+        infobar.main_job_level = player.main_job_level
+        infobar.sub_job = player.sub_job
+        infobar.sub_job_level = player.sub_job_level
         box:color(255,255,255)
-      else
-        box:color(128,255,255)
-      end
-      box:text(settings.TargetPC)
-      box:update(infobar)
+        box:bold(false)
+        box:text(settings.NoTarget)
+        box:update(infobar)
+    else
+        -- spawn_type is no longer being set the same way.
+        -- Instead, use index.
+        -- index < 1024 (0x400) means either mob, npc, or ship.
+        -- index < 1792 (0x700) means pc.
+        -- index < 2048 (0x800) means pet, trust, or fellow
+
+        if target.index < 1024 then -- mob or NPC
+            mob = Mob:new(target.id)
+            if mob then -- is a mob
+                box:color(255,255,128)
+
+                if target_idx_table:containskey(target.index) then
+                    local t = target_idx_table[target.index]
+                    if os.clock() < t.expires then Mob.setLvl(mob, t.lvl)
+                    elseif settings.shouldScan and os.clock() >= t.expires then scan() end
+                elseif settings.shouldScan then scan() end
+
+                box:bold(mob.aggressive and Mob.canAggro(mob, player.main_job_level))
+                box:text(settings.TargetMOB)
+                box:update(mob)
+            else -- is an NPC
+                box:color(128,255,128)
+                box:text(settings.TargetNPC)
+                box:bold(false)
+                box:update(infobar)
+            end
+        else --if target.index < 1792 then -- is a PC
+            box:bold(false)
+            if target.spawn_type == 1 then
+                box:color(255,255,255)
+            else
+                box:color(128,255,255)
+            end
+            box:text(settings.TargetPC)
+            box:update(infobar)
+        end
     end
-  end
 end
 
 PACKET_WIDESCAN = 0x0F4
 
 windower.register_event('incoming chunk',function(id,org,modi,is_injected,is_blocked)
-  if id == 0xB then
-    zoning_bool = true
-  elseif id == 0xA then
-    zoning_bool = false
-  elseif id == PACKET_WIDESCAN then
-    scanning = 0
-    local packet = packets.parse('incoming', org)
-    target_idx_table[packet.Index] = {lvl=packet.Level, expires=os.clock()+rescan}
-    local target = windower.ffxi.get_mob_by_index(packet.Index)
-    if target and target.id == last_target_id and mob then
-      Mob.setLvl(mob, packet.Level)
-      local player = windower.ffxi.get_player()
-      if player then box:bold(mob.aggressive and Mob.canAggro(mob, player.main_job_level)) end
-      box:update(mob)
+    if id == 0xB then
+        zoning_bool = true
+    elseif id == 0xA then
+        zoning_bool = false
+    elseif id == PACKET_WIDESCAN then
+        scanning = 0
+        local packet = packets.parse('incoming', org)
+        target_idx_table[packet.Index] = {lvl=packet.Level, expires=os.clock()+rescan}
+        local target = windower.ffxi.get_mob_by_index(packet.Index)
+        if target and target.id == last_target_id and mob then
+            Mob.setLvl(mob, packet.Level)
+            local player = windower.ffxi.get_player()
+            if player then box:bold(mob.aggressive and Mob.canAggro(mob, player.main_job_level)) end
+            box:update(mob)
+        end
     end
-  end
 end)
 
 windower.register_event('prerender', function()
@@ -217,14 +217,14 @@ windower.register_event('prerender', function()
     infobar.z = target.z
     infobar.facing = tostring(getDegrees(target.facing))
     infobar.facing_dir = DegreesToDirection(target.facing)
-    
+
     get_target(target.index)
     box:show()
 end)
 
 --windower.register_event('target change', get_target)
 windower.register_event('job change', function()
-  get_target(windower.ffxi.get_player().index)
+    get_target(windower.ffxi.get_player().index)
 end)
 
 windower.register_event('time change', function(new, old)
@@ -251,57 +251,57 @@ windower.register_event('time change', function(new, old)
 end)
 
 windower.register_event('addon command', function(command, ...)
-  command = command and command:lower()
-  local args = T{...}
-  if not command then
-    windower.add_to_chat(207,"First argument not specified, use '//ib|infobar help' for info.")
-  elseif command == 'help' then
-    windower.add_to_chat(207,"Infobar Commands:")
-    windower.add_to_chat(207,"//ib|infobar notes add 'string'")
-    windower.add_to_chat(207,"//ib|infobar notes delete")
-  elseif command == 'notes' then
-    local target = windower.ffxi.get_mob_by_target('t')
-    local tname = string.gsub(target.name, ' ', '_')
-    if not args[1] then
-      windower.add_to_chat(207,"Second argument not specified, use '//ib|infobar help' for info.")
-    elseif args[1]:lower() == 'add' then
-      if not target then windower.add_to_chat(207,"No target selected") return end
-      for i,v in pairs(args) do args[i]=windower.convert_auto_trans(args[i]) end
-      local str = table.concat(args," ",2)
-      notesdb:exec('INSERT OR REPLACE INTO notes VALUES ("'..target.name..'","'..str..'")')
-      get_target(target.index)
-    elseif args[1]:lower() == 'delete' then
-      if not target then windower.add_to_chat(207,"No target selected") return end
-      notesdb:exec('DELETE FROM notes WHERE name = "'..target.name..'"')
-      get_target(target.index)
+    command = command and command:lower()
+    local args = T{...}
+    if not command then
+        windower.add_to_chat(207,"First argument not specified, use '//ib|infobar help' for info.")
+    elseif command == 'help' then
+        windower.add_to_chat(207,"Infobar Commands:")
+        windower.add_to_chat(207,"//ib|infobar notes add 'string'")
+        windower.add_to_chat(207,"//ib|infobar notes delete")
+    elseif command == 'notes' then
+        local target = windower.ffxi.get_mob_by_target('t')
+        local tname = string.gsub(target.name, ' ', '_')
+        if not args[1] then
+            windower.add_to_chat(207,"Second argument not specified, use '//ib|infobar help' for info.")
+        elseif args[1]:lower() == 'add' then
+            if not target then windower.add_to_chat(207,"No target selected") return end
+            for i,v in pairs(args) do args[i]=windower.convert_auto_trans(args[i]) end
+            local str = table.concat(args," ",2)
+            notesdb:exec('INSERT OR REPLACE INTO notes VALUES ("'..target.name..'","'..str..'")')
+            get_target(target.index)
+        elseif args[1]:lower() == 'delete' then
+            if not target then windower.add_to_chat(207,"No target selected") return end
+            notesdb:exec('DELETE FROM notes WHERE name = "'..target.name..'"')
+            get_target(target.index)
+        else
+            windower.add_to_chat(207,"Second argument wrong, use '//ib|infobar help' for info.")
+        end
+    elseif command == 'mob' or command == 'prop' or command == 'property' then
+        local target = windower.ffxi.get_mob_by_target('t')
+        if not args[1] then windower.add_to_chat(207,'No property specified.') return
+        elseif not target or target.spawn_type ~= 16 then windower.add_to_chat(207,'No mob selected.') return end
+
+        windower.add_to_chat(207, '%s %s:%s':format(mob.name, args[1], tostring(mob[args[1]]) or ''))
     else
-      windower.add_to_chat(207,"Second argument wrong, use '//ib|infobar help' for info.")
+        windower.add_to_chat(207,"First argument wrong, use '//ib|infobar help' for info.")
     end
-  elseif command == 'mob' or command == 'prop' or command == 'property' then
-    local target = windower.ffxi.get_mob_by_target('t')
-    if not args[1] then windower.add_to_chat(207,'No property specified.') return
-    elseif not target or target.spawn_type ~= 16 then windower.add_to_chat(207,'No mob selected.') return end
-    
-    windower.add_to_chat(207, '%s %s:%s':format(mob.name, args[1], tostring(mob[args[1]]) or ''))
-  else
-    windower.add_to_chat(207,"First argument wrong, use '//ib|infobar help' for info.")
-  end
 end)
 
 function scan()
-  if scanning + max_scan_wait > os.clock() then return end
-  
-  -- Check if in zone
-  local info = windower.ffxi.get_info()
-  local self = windower.ffxi.get_mob_by_target('me')
-  if not self or not info or invalid_zones:contains(res.zones[info.zone].en) then return end
-  
-  scanning = os.clock()
-  
-  packet = packets.new('outgoing', PACKET_WIDESCAN, {
-    ['Flags'] = 1,
-    ['_unknown1'] = 0,
-    ['_unknown2'] = 0,
-  })
-  packets.inject(packet)
+    if scanning + max_scan_wait > os.clock() then return end
+
+    -- Check if in zone
+    local info = windower.ffxi.get_info()
+    local self = windower.ffxi.get_mob_by_target('me')
+    if not self or not info or invalid_zones:contains(res.zones[info.zone].en) then return end
+
+    scanning = os.clock()
+
+    packet = packets.new('outgoing', PACKET_WIDESCAN, {
+        ['Flags'] = 1,
+        ['_unknown1'] = 0,
+        ['_unknown2'] = 0,
+    })
+    packets.inject(packet)
 end
