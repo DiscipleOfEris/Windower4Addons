@@ -1,6 +1,6 @@
 _addon.name = 'EraMobDrops'
 _addon.author = 'DiscipleOfEris'
-_addon.version = '1.6.0'
+_addon.version = '1.6.1'
 _addon.commands = {'mobdrops', 'drops'}
 
 config = require('config')
@@ -16,13 +16,13 @@ defaults.header = "${mob_name} (TH: ${TH})"
 defaults.subheader = "(Lv.${lvl}, Respawn: ${respawn})"
 defaults.footer = ""
 defaults.noDrops = "No Drops"
---defaults.Steal = "${item.name}"
 defaults.pageSize = 10
 defaults.scrollSize = 1
 defaults.scrollInvert = false
 defaults.scrollHeaders = false
 defaults.noDropsHideHeaders = false
 defaults.maxTH = 4
+defaults.verbose = true
 defaults.display = {}
 defaults.display.pos = {}
 defaults.display.pos.x = 0
@@ -50,84 +50,78 @@ items = res.items
 local mobKeys = {'mob_id', 'name', 'iname', 'zone_id', 'drop_id', 'respawn', 'lvl_min', 'lvl_max'}
 local dropKeys = {'drop_id', 'drop_type', 'group_id', 'group_rate', 'item_id', 'item_rate'}
 
-DROP_TYPE = { NORMAL=0x0, GROUPED=0x1, STEAL=0x2, DESPOIL=0x4 }
+local DROP_TYPE = { NORMAL=0x0, GROUPED=0x1, STEAL=0x2, DESPOIL=0x4 }
+local MOUSE =
+{
+    MOUSEMOVE   = 0,
+    LBUTTONDOWN = 1,
+    LBUTTONUP   = 2,
+    RBUTTONDOWN = 4,
+    RBUTTONUP   = 5,
+    MBUTTONDOWN = 7,
+    MBUTTONUP   = 8,
+    MOUSEWHEEL  = 10,
+}
+local CLICK_DISTANCE = 2
 
-TH_lvl = 0
-prevMouse = {x=-1,y=-1}
-CLICK_DISTANCE = 2.0^2
-scroll = 0
-scroll_max = 0
-
-prev_TH_lvl = 0
-prev_target_id = -1
-prev_scroll = 0
-should_update = false
+local state =
+{
+    TH_lvl         = 0,
+    scroll         = 0,
+    scroll_max     = 0,
+    prev_TH_lvl    = 0,
+    prev_target_id = nil,
+    prev_scroll    = 0,
+    should_update  = false,
+    prevMouse      = nil,
+}
 
 windower.register_event('load',function()
   db = sqlite3.open(windower.addon_path..'/mobs_drops.db', sqlite3.OPEN_READONLY)
-  
-  if not windower.ffxi.get_info().logged_in then return end
-  
-  local player = windower.ffxi.get_player()
-  local target = windower.ffxi.get_mob_by_target('st') or windower.ffxi.get_mob_by_target('t') or player
-  local info = getTargetInfo(target)
-
-  updateInfo(info)
 end)
 
 windower.register_event('unload', function()
   db:close()
 end)
 
-windower.register_event('mouse', function(type, x, y, delta, blocked)
-  if not box:hover(x,y) or type == 0 then return end
+windower.register_event('mouse', function(id, x, y, delta, blocked)
+  -- Exit if we're just moving the mouse (drag+drop handled by text object).
+  if id == MOUSE.MOUSEMOVE then return false end
+  
+  -- Exit if the mouse is not inside the text box
+  if not box:hover(x, y) then return false end
 
-  mouse = {x=x,y=y}
-  clicked = false
-  
-  --log(tostring(type)..': '..x..','..y..' delta: '..delta..' blocked: '..tostring(blocked))
-  
-  if type == 1 then
-    prevMouse = mouse
-  elseif type == 2 and distanceSquared(mouse, prevMouse) < CLICK_DISTANCE then
-    -- left clicked
-    if setTH(TH_lvl+1) then log('Setting TH level: '..tostring(TH_lvl)) end
-    clicked = true
-  elseif type == 4 then
-    prevMouse = mouse
-  elseif type == 5 and distanceSquared(mouse, prevMouse) < CLICK_DISTANCE then
-    -- right clicked
-    if setTH(TH_lvl-1) then log('Setting TH level: '..tostring(TH_lvl)) end
-    clicked = true
-  elseif type == 7 then
-    prevMouse = mouse
-  elseif type == 8 and distanceSquared(mouse, prevMouse) < CLICK_DISTANCE then
-    -- middle clicked
-    if setTH(TH_lvl-1) then log('Setting TH level: '..tostring(TH_lvl)) end
-    clicked = true
-  elseif delta > 0 then
-    -- scrolled up
-    doScroll(-1)
-  elseif delta < 0 then
-    -- scrolled down
-    doScroll(+1)
+  local mouse = {x=x, y=y, id=id}
+    
+  if id == MOUSE.LBUTTONDOWN or id == MOUSE.RBUTTONDOWN or id == MOUSE.MBUTTONDOWN then
+    state.prevMouse = mouse
+    return true
+  elseif state.prevMouse and id == state.prevMouse.id + 1 and distanceWithin(mouse, state.prevMouse, CLICK_DISTANCE) then
+    local success = setTH(state.TH_lvl + (id == MOUSE.LBUTTONUP and 1 or -1))
+    if success and settings.verbose then
+      log('Setting TH level: '..tostring(state.TH_lvl))
+    end
+    return true
+  elseif delta ~= 0 then
+    doScroll(delta > 0 and -1 or 1)
+    return true
   end
   
-  return true
+  return false
 end)
 
 windower.register_event('prerender', function()
   local player = windower.ffxi.get_player()
   local target = windower.ffxi.get_mob_by_target('st') or windower.ffxi.get_mob_by_target('t') or player
-  local target_id = target and target.id or -1
+  local target_id = target and target.id
   
-  if not should_update and target_id == prev_target_id and TH_lvl == prev_TH_lvl and scroll == prev_scroll then return end
-  if target_id ~= prev_target_id then scroll = 0 end
+  if not state.should_update and target_id == state.prev_target_id and state.TH_lvl == state.prev_TH_lvl and state.scroll == state.prev_scroll then return end
+  if target_id ~= state.prev_target_id then state.scroll = 0 end
   
-  prev_target_id = target_id
-  prev_TH_lvl = TH_lvl
-  prev_scroll = scroll
-  should_update = false
+  state.prev_target_id = target_id
+  state.prev_TH_lvl = state.TH_lvl
+  state.prev_scroll = state.scroll
+  state.should_update = false
   
   local info = getTargetInfo(target)
   updateInfo(info)
@@ -137,7 +131,9 @@ windower.register_event('addon command', function(command, ...)
   args = L{...}
   command = command:lower()
   
-  if command == "item" then
+  if command == 'help' or not command then
+    
+  elseif command == "item" then
     name = strip(windower.convert_auto_trans(args:concat(' ')))
     item = items:with('en', function(val)
       if name == strip(val) then return true end
@@ -212,7 +208,7 @@ windower.register_event('addon command', function(command, ...)
         end
       end
       if not found then
-        mobsProcessed:insert({name=mob.mob_name, zone_id=mob.zone_id, drop_id=mob.drop_id, lvl=mob.lvl, count=1})
+        mobsProcessed:insert({mob_name=mob.mob_name, zone_id=mob.zone_id, drop_id=mob.drop_id, lvl=mob.lvl, count=1})
         if not drop_ids:contains(mob.drop_id) then drop_ids:insert(mob.drop_id) end
       end
     end
@@ -249,63 +245,54 @@ windower.register_event('addon command', function(command, ...)
       log('%s (%s Lv.%s): %s':format(zones[mob.zone_id].en, mob.count, mob.lvl, mob.dropStr))
     end
   elseif command == "th+" then
-    if setTH(TH_lvl+1) then log('Setting TH level: '..tostring(TH_lvl)) end
+    if setTH(state.TH_lvl + 1) then log('Setting TH level: '..tostring(state.TH_lvl)) end
   elseif command == "th-" then
-    if setTH(TH_lvl-1) then log('Setting TH level: '..tostring(TH_lvl)) end
+    if setTH(state.TH_lvl - 1) then log('Setting TH level: '..tostring(state.TH_lvl)) end
   elseif command == "page" or command == "pagesize" then
     settings.pageSize = tonumber(args[1])
     config.save(settings)
-    should_update = true
+    state.should_update = true
   end
 end)
 
 function getTargetInfo(target)
-  local info = {}
+  if not target then return nil end
 
-  if target == nil then return {type='none'} end
-  
   if target.index < 1024 then
     local zone_id = windower.ffxi.get_info().zone
     local mob, drops = getMobInfo(target, zone_id)
     
-    if mob then
-      info.type = 'mob'
-      info.mob = mob
-      info.drops = drops
-    end
+    if not mob then return nil end
+    
+    return {
+      mob = mob,
+      drops = drops,
+    }
   end
-  
-  return info
 end
 
 function getMobInfo(target, zone_id)
   if not db:isopen() then return end
   
-  local mob = false
-  local drops = {}
-  
-  local idQuery = 'SELECT * FROM mobs WHERE mob_id='..target.id..''
-  for mobRow in db:nrows(idQuery) do
-    mob = mobRow
-    drops = dbGetDrops(mob.drop_id)
-    break
+  local idQuery = 'SELECT * FROM mobs WHERE mob_id='..target.id
+  for mob in db:nrows(idQuery) do
+    return mob, dbGetDrops(mob.drop_id)
   end
   
-  return mob, drops
+  return nil
 end
 
 function updateInfo(info)
-  if info.type ~= 'mob' then
-    prev_target_id = 0
+  if not info then
     box:text('')
     box:visible(false)
     return
   end
   
-  local mob = (info and info.mob) and info.mob or {}
+  local mob = info.mob
+  local drops = info.drops
   local steal_lines = T{}
   local lines = T{}
-  local drops = info and info.drops or {}
   
   for _, steal in ipairs(drops.steals) do
     steal_lines:insert(items[steal.item_id].en..': Steal')
@@ -315,7 +302,7 @@ function updateInfo(info)
     if group.group_rate > 0 then
       for _, item in ipairs(group.items) do
         if item.item_rate > 0 then
-          rate = applyTH(group.group_rate) * item.item_rate / 1000
+          local rate = applyTH(group.group_rate) * item.item_rate / 1000
           lines:insert(i..': '..items[item.item_id].en..string.format(': %.1f%%', rate / 10))
         end
       end
@@ -324,7 +311,7 @@ function updateInfo(info)
   
   for _, item in ipairs(drops.items) do
     if item.item_rate > 0 then
-      rate = applyTH(item.item_rate)
+      local rate = applyTH(item.item_rate)
       lines:insert(items[item.item_id].en..string.format(': %.1f%%', rate / 10))
     end
   end
@@ -337,25 +324,25 @@ function updateInfo(info)
     if type(a) == 'number' then return math.max(a, #b)
     else return math.max(#a, #b) end
   end, 1))
-  scroll_max = math.max(0, #lines - settings.pageSize)
+  state.scroll_max = math.max(0, #lines - settings.pageSize)
   
   if settings.scrollHeaders then
     if #settings.subheader > 0 then lines:insert(1, settings.subheader) end
     if #settings.header > 0 then lines:insert(1, settings.header) end
     if #settings.footer > 0 then lines:insert(settings.footer) end
-    lines = lines:slice(scroll+1, scroll + settings.pageSize)
-    if scroll > 0 then
+    lines = lines:slice(state.scroll+1, state.scroll + settings.pageSize)
+    if state.scroll > 0 then
       lines[1] = lines[1]:rpad(' ', maxWidth).." ▲"
     end
-    if scroll_max > 0 and scroll < scroll_max then
+    if state.scroll_max > 0 and state.scroll < state.scroll_max then
       lines[#lines] = lines[#lines]:rpad(' ', maxWidth).." ▼"
     end
   else
-    lines = lines:slice(scroll+1, scroll + settings.pageSize)
-    if scroll > 0 then
+    lines = lines:slice(state.scroll+1, state.scroll + settings.pageSize)
+    if state.scroll > 0 then
       lines[1] = lines[1]:rpad(' ', maxWidth).." ▲"
     end
-    if scroll_max > 0 and scroll < scroll_max then
+    if state.scroll_max > 0 and state.scroll < state.scroll_max then
       lines[#lines] = lines[#lines]:rpad(' ', maxWidth).." ▼"
     end
     if #settings.subheader > 0 then lines:insert(1, settings.subheader) end
@@ -372,15 +359,12 @@ function updateInfo(info)
   
   box:text(str)
   
-  lvl = mob.lvl_min and getLevelStr(mob) or '?'
-  update = table.update({TH=TH_lvl, lvl=lvl}, mob)
-  update.name = update.mob_name
-  update.respawn = update.respawn and (update.respawn / 60) or 0
-  if update.respawn > 60 then
-    update.respawn = string.format('%.1fh', update.respawn/60)
-  else
-    update.respawn = string.format('%.1fm', update.respawn)
-  end
+  local update = table.update(mob, {
+    TH = state.TH_lvl,
+    name = mob.mob_name,
+    lvl = getLevelStr(mob),
+    respawn = getRespawnStr(mob)
+  })
   
   box:update(update)
   box:visible(true)
@@ -490,15 +474,15 @@ function dbGetMobsWithName(name)
 end
 
 function applyTH(item_rate)
-  rate = item_rate/1000
+  rate = math.min(1, math.max(0, item_rate/1000))
   
-  if TH_lvl > 2 then
-    rate = rate + (TH_lvl-2)*0.01
+  if state.TH_lvl > 2 then
+    rate = rate + (state.TH_lvl-2)*0.01
   end
   
-  if TH_lvl > 1 then
+  if state.TH_lvl > 1 then
     rate = 1-(1-rate)^3
-  elseif TH_lvl > 0 then
+  elseif state.TH_lvl > 0 then
     rate = 1-(1-rate)^2
   end
   
@@ -506,13 +490,13 @@ function applyTH(item_rate)
 end
 
 function setTH(newTH)
-  TH_lvl = newTH
+  state.TH_lvl = newTH
   
-  if TH_lvl < 0 then
-    TH_lvl = 0
+  if state.TH_lvl < 0 then
+    state.TH_lvl = 0
     return false
-  elseif TH_lvl > settings.maxTH then
-    TH_lvl = settings.maxTH
+  elseif state.TH_lvl > settings.maxTH then
+    state.TH_lvl = settings.maxTH
     return false
   end
   
@@ -525,13 +509,13 @@ function doScroll(dir)
   
   if settings.scrollInvert then dir = dir * -1 end
   
-  scroll = scroll + settings.scrollSize * dir
+  state.scroll = state.scroll + settings.scrollSize * dir
   
-  if scroll > scroll_max then
-    scroll = scroll_max
+  if state.scroll > state.scroll_max then
+    state.scroll = state.scroll_max
     return false
-  elseif scroll < 0 then
-    scroll = 0
+  elseif state.scroll < 0 then
+    state.scroll = 0
     return false
   end
   
@@ -570,16 +554,34 @@ function kvZip(keys, values)
   return t
 end
 
-function distanceSquared(A, B)
-  return (A.x - B.x)^2 + (A.y - B.y)^2
+function distanceWithin(A, B, within)
+    local dX = B.x - A.x
+    local dY = B.y - A.y
+    
+    return (dX * dX + dY * dY) <= within * within
 end
+
 
 function strip(str)
   return str:lower():gsub(' ',''):gsub('-',''):gsub('%.',''):gsub('\'',''):gsub(':',''):gsub('"',''):gsub('♂','m'):gsub('♀','f'):gsub('%(',''):gsub('%)',''):gsub('♪','')
 end
 
 function getLevelStr(mob)
-  str = tostring(mob.lvl_min)
+  if not mob or not mob.lvl_min then return '?' end
+  local str = tostring(mob.lvl_min)
   if mob.lvl_max > mob.lvl_min then str = str..'-'..tostring(mob.lvl_max) end
   return str
+end
+
+function getRespawnStr(mob)
+    local respawn = mob.respawn
+    
+    respawn = respawn and respawn / 60 or 0
+    if respawn > 60 then
+        respawn = string.format('%.1fh', respawn / 60)
+    else
+        respawn = string.format('%.1fm', respawn)
+    end
+    
+    return respawn
 end
