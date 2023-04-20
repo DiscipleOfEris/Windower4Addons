@@ -35,14 +35,14 @@ You'll also need to some extra setup in your GearSwap profiles. Namely, running
 ```Lua
 -- addons/GearSwap/data/Maruru_BLM.lua
 
-function equip_sets()
-    windower.send_command('sta !packets on')
+function get_sets()
+    windower.send_command('sta !packets off')
     
     -- Do the actual configuration of your sets as per normal.
 end
 
 function file_unload()
-    windower.send_command('sta !packets off')
+    windower.send_command('sta !packets on')
 end
 ```
 
