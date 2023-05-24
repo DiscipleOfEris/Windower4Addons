@@ -1,6 +1,9 @@
 
+import os
 import re
 import sqlite3
+
+sqlPath = r'./sql'
 
 con = sqlite3.connect('mobs_drops.db')
 cur = con.cursor()
@@ -42,7 +45,7 @@ CREATE INDEX idx_drops_itemid ON drops(item_id);''')
 con.commit()
 
 
-with open('sql/mob_groups.sql') as file:
+with open(os.path.join(sqlPath, r'mob_groups.sql')) as file:
     fileContents = file.read()
     fileContents = re.sub(r"^CREATE DATABASE[^;]*;", "", fileContents, flags=re.IGNORECASE | re.MULTILINE)
     fileContents = re.sub(r"^USE[^;]*;", "", fileContents, flags=re.IGNORECASE | re.MULTILINE)
@@ -51,7 +54,7 @@ with open('sql/mob_groups.sql') as file:
     fileContents = re.sub(r"\\'", "''", fileContents)
     curTemp.executescript(fileContents)
 
-with open('sql/mob_spawn_points.sql') as file:
+with open(os.path.join(sqlPath, r'mob_spawn_points.sql')) as file:
     fileContents = file.read()
     fileContents = re.sub(r"^CREATE DATABASE[^;]*;", "", fileContents, flags=re.IGNORECASE | re.MULTILINE)
     fileContents = re.sub(r"^USE[^;]*;", "", fileContents, flags=re.IGNORECASE | re.MULTILINE)
@@ -60,7 +63,7 @@ with open('sql/mob_spawn_points.sql') as file:
     fileContents = re.sub(r"\\'", "''", fileContents)
     curTemp.executescript(fileContents)
 
-with open('sql/mob_droplist.sql') as file:
+with open(os.path.join(sqlPath, r'mob_droplist.sql')) as file:
     fileContents = file.read()
     fileContents = re.sub(r"^CREATE DATABASE[^;]*;", "", fileContents, flags=re.IGNORECASE | re.MULTILINE)
     fileContents = re.sub(r"^USE[^;]*;", "", fileContents, flags=re.IGNORECASE | re.MULTILINE)
@@ -74,7 +77,7 @@ conTemp.commit()
 
 def mob_generator():
   count = 0
-  for row in curTemp.execute('SELECT * FROM mob_spawn_points INNER JOIN mob_groups ON mob_spawn_points.groupid = mob_groups.groupid'):
+  for row in curTemp.execute('SELECT * FROM mob_spawn_points INNER JOIN mob_groups ON mob_spawn_points.groupid = mob_groups.groupid AND mob_groups.zoneid = ((mob_spawn_points.mobid >> 12) & 0xFFF)'):
     count += 1
     
     alt_name = row['mobname'].replace('_', ' ')
