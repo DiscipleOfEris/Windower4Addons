@@ -1,6 +1,6 @@
 _addon.name = 'EraMobDrops'
 _addon.author = 'DiscipleOfEris'
-_addon.version = '1.6.1'
+_addon.version = '1.6.2'
 _addon.commands = {'mobdrops', 'drops'}
 
 config = require('config')
@@ -198,7 +198,7 @@ windower.register_event('addon command', function(command, ...)
     local mobsProcessed = T{}
     for _, mob in ipairs(mobs) do
       mob.lvl = getLevelStr(mob)
-      
+
       local found = false
       for _, row in ipairs(mobsProcessed) do
         if row.zone_id == mob.zone_id and row.mob_name == mob.mob_name and row.drop_id == mob.drop_id and row.lvl == mob.lvl then
@@ -215,18 +215,37 @@ windower.register_event('addon command', function(command, ...)
     
     for _, drop_id in ipairs(drop_ids) do
       local drops = dbGetDrops(drop_id)
-      local tmp = T{}
-      for _, drop in ipairs(drops) do
+      local lines = T{}
+      lines:insert('')
+
+      for _, drop in ipairs(drops.steals) do
         drop.item_name = items[drop.item_id].en
-        
-        if testflag(drop.drop_type, DROP_TYPE.STEAL) then
-          tmp:insert('%s (Steal)':format(drop.item_name))
-        else
-          tmp:insert('%s %.1f%%':format(drop.item_name, drop.item_rate/10))
+        lines:insert('  %s: Steal':format(drop.item_name))
+      end
+
+      for _, drop in ipairs(drops.items) do
+        drop.item_name = items[drop.item_id].en
+        lines:insert('  %s: %.1f%%':format(drop.item_name, drop.item_rate / 10))
+
+        if state.TH_lvl > 0 then
+          lines[#lines] = lines[#lines] .. ' (TH%d: %.1f%%)':format(state.TH_lvl, applyTH(drop.item_rate) / 10)
         end
       end
-      
-      local dropStr = tmp:concat(', ')
+
+      for i, group in ipairs(drops.groups) do
+        lines:insert('  Group %d: %.1f%%':format(i, group.group_rate / 10))
+
+        if state.TH_lvl > 0 then
+          lines[#lines] = lines[#lines] ..  ' (TH%d: %.1f%%)':format(state.TH_lvl, applyTH(group.group_rate) / 10)
+        end
+
+        for _, drop in ipairs(group.items) do
+          drop.item_name = items[drop.item_id].en
+          lines:insert('    %s %.1f%%':format(drop.item_name, drop.item_rate / 10))
+        end
+      end
+
+      local dropStr = lines:concat('\n')
       for _, mob in ipairs(mobsProcessed) do
         if mob.drop_id == drop_id then
           mob.drops = drops
@@ -242,7 +261,7 @@ windower.register_event('addon command', function(command, ...)
     end
     
     for _, mob in ipairs(mobsProcessed) do
-      log('%s (%s Lv.%s): %s':format(zones[mob.zone_id].en, mob.count, mob.lvl, mob.dropStr))
+      log('%s (%d %s Lv.%s): %s':format(zones[mob.zone_id].en, mob.count, mob.mob_name, mob.lvl, mob.dropStr))
     end
   elseif command == "th+" then
     if setTH(state.TH_lvl + 1) then log('Setting TH level: '..tostring(state.TH_lvl)) end
@@ -298,21 +317,16 @@ function updateInfo(info)
     steal_lines:insert(items[steal.item_id].en..': Steal')
   end
   
-  for i, group in ipairs(drops.groups) do
-    if group.group_rate > 0 then
-      for _, item in ipairs(group.items) do
-        if item.item_rate > 0 then
-          local rate = applyTH(group.group_rate) * item.item_rate / 1000
-          lines:insert(i..': '..items[item.item_id].en..string.format(': %.1f%%', rate / 10))
-        end
-      end
-    end
+  for _, item in ipairs(drops.items) do
+    local rate = applyTH(item.item_rate)
+    lines:insert(items[item.item_id].en..string.format(': %.1f%%', rate / 10))
   end
   
-  for _, item in ipairs(drops.items) do
-    if item.item_rate > 0 then
-      local rate = applyTH(item.item_rate)
-      lines:insert(items[item.item_id].en..string.format(': %.1f%%', rate / 10))
+  for i, group in ipairs(drops.groups) do
+    lines:insert('Group %d (%.1f%%):':format(i, applyTH(group.group_rate) / 10))
+
+    for _, item in ipairs(group.items) do
+      lines:insert('  %s: %.1f%%':format(items[item.item_id].en, item.item_rate / 10))
     end
   end
   
