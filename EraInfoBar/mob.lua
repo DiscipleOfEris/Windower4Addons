@@ -7,7 +7,7 @@ require('statics')
 Mob = {}
 
 Mob.dbKeys = L{
-  'mob_id', 'group_id', 'pool_id', 'family_id', 'name',
+  'mob_id', 'group_id', 'pool_id', 'family_id', 'name', 'ph_id', 'ph_name',
   'respawnSec', 'hpRaw', 'mpRaw', 'lvl_min', 'lvl_max',
   'mJobRaw', 'sJobRaw', 'aggressive', 'linking', 'true_detection', 'nm', 'pet', 'immunitiesRaw',
   'ecosystemRaw',
@@ -18,7 +18,7 @@ Mob.dbKeys = L{
   'charmable'}
 
 Mob.dbQuery = "SELECT \
-  mob_id, groups.group_id, pools.pool_id, families.family_id, name, \
+  mob_id, groups.group_id, pools.pool_id, families.family_id, name, ph_id, ph_name, \
   respawn, groups.hp, groups.mp, lvl_min, lvl_max, \
   mJob, sJob, aggressive, linking, true_detection, nm, pet, immunities, \
   ecosystem, \
@@ -28,7 +28,7 @@ Mob.dbQuery = "SELECT \
   detects, \
   charmable \
   FROM mobs \
-  INNER JOIN groups ON mobs.group_id = groups.group_id \
+  INNER JOIN groups ON mobs.group_id = groups.group_id AND groups.zone_id = ((mobs.mob_id >> 12) & 0xFFF) \
   INNER JOIN pools ON groups.pool_id = pools.pool_id \
   INNER JOIN families ON pools.family_id = families.family_id \
   WHERE mob_id = ?;"

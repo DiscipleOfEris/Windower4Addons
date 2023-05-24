@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.]]
 
 _addon.name = 'EraInfoBar'
 _addon.author = 'DiscipleOfEris'
-_addon.version = '1.1.1'
+_addon.version = '1.1.2'
 _addon.commands = {'ib', 'infobar'}
 
 config = require('config')
@@ -42,7 +42,7 @@ defaults = {}
 defaults.NoTarget = "${zone_name} ${name} (${main_job}${main_job_level}/${sub_job}${sub_job_level}) (${x||%.3f},${y||%.3f},${z||%.3f}) ${facing||%.0f}° (${facing_dir})"
 defaults.TargetPC = "${name}"
 defaults.TargetNPC = "${name}"
-defaults.TargetMOB = "${name} (Lv.${lvl} ${job}${respawn||, Respawn:%s})${aggressive|| Aggressive}${linking|| Linking}${true_detection|| True}${detects|| %s}${resistances|| %s}${immunities|| Immune: %s}"
+defaults.TargetMOB = "${name} (Lv.${lvl} ${job}${respawn||, Respawn:%s}${ph_name||, PH for %s})${aggressive|| Aggressive}${linking|| Linking}${true_detection|| True}${detects|| %s}${resistances|| %s}${immunities|| Immune: %s}"
 defaults.shouldScan = true
 defaults.display = {}
 defaults.display.pos = {}
