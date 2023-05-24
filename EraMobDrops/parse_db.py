@@ -3,7 +3,8 @@ import os
 import re
 import sqlite3
 
-sqlPath = r'./sql'
+sqlPath = r'C:\Users\ofsha\Documents\GitHub\ffera\sql'
+ignoreZones = (15, 45, 132, 183, 215, 216, 217, 218, 253, 254, 255, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298 )
 
 con = sqlite3.connect('mobs_drops.db')
 cur = con.cursor()
@@ -17,15 +18,15 @@ DROP TABLE IF EXISTS mobs;
 DROP INDEX IF EXISTS idx_mobs_dropid;
 DROP INDEX IF EXISTS idx_mobs_mobiname_zone_drop;
 CREATE TABLE mobs (
-  mob_id INTEGER,
-  mob_name TEXT,
-  mob_iname TEXT,
-  zone_id INTEGER,
-  drop_id INTEGER,
-  respawn INTEGER,
-  lvl_min INTEGER,
-  lvl_max INTEGER,
-  PRIMARY KEY (mob_id));
+    mob_id INTEGER,
+    mob_name TEXT,
+    mob_iname TEXT,
+    zone_id INTEGER,
+    drop_id INTEGER,
+    respawn INTEGER,
+    lvl_min INTEGER,
+    lvl_max INTEGER,
+    PRIMARY KEY (mob_id));
 CREATE INDEX idx_mobs_dropsid on mobs(drop_id);
 CREATE INDEX idx_mobs_mobiname_zone_drop on mobs(mob_iname, zone_id, drop_id);''')
 cur.executescript('''
@@ -33,17 +34,16 @@ DROP TABLE IF EXISTS drops;
 DROP INDEX IF EXISTS idx_drops_dropid;
 DROP INDEX IF EXISTS idx_drops_itemid;
 CREATE TABLE drops (
-  drop_id INTEGER,
-  drop_type INTEGER,
-  group_id INTEGER,
-  group_rate INTEGER,
-  item_id INTEGER,
-  item_rate INTEGER);
+    drop_id INTEGER,
+    drop_type INTEGER,
+    group_id INTEGER,
+    group_rate INTEGER,
+    item_id INTEGER,
+    item_rate INTEGER);
 CREATE INDEX idx_drops_dropid ON drops(drop_id);
 CREATE INDEX idx_drops_itemid ON drops(item_id);''')
 
 con.commit()
-
 
 with open(os.path.join(sqlPath, r'mob_groups.sql')) as file:
     fileContents = file.read()
@@ -76,34 +76,37 @@ with open(os.path.join(sqlPath, r'mob_droplist.sql')) as file:
 conTemp.commit()
 
 def mob_generator():
-  count = 0
-  for row in curTemp.execute('SELECT * FROM mob_spawn_points INNER JOIN mob_groups ON mob_spawn_points.groupid = mob_groups.groupid AND mob_groups.zoneid = ((mob_spawn_points.mobid >> 12) & 0xFFF)'):
-    count += 1
-    
-    alt_name = row['mobname'].replace('_', ' ')
-    mob_name = row['polutils_name']
+    count = 0
+    for row in curTemp.execute('SELECT * FROM mob_spawn_points INNER JOIN mob_groups ON mob_spawn_points.groupid = mob_groups.groupid AND mob_groups.zoneid = ((mob_spawn_points.mobid >> 12) & 0xFFF)'):
+        if row['zoneid'] in ignoreZones:
+            continue
 
-    if len(mob_name) == 0:
-      mob_name = alt_name
-    
-    mob_iname = re.sub('[\'\"\-\(\)\,\. ]', '', mob_name.lower())
-    
-    if count % 1000 == 0: print(count, 'mob:', row['mobid'], mob_name, mob_iname, row['zoneid'], row['dropid'], row['respawntime'], row['minLevel'], row['maxLevel'])
-      
-    yield (row['mobid'], mob_name, mob_iname, row['zoneid'], row['dropid'], row['respawntime'], row['minLevel'], row['maxLevel'])
+        count += 1
+        
+        alt_name = row['mobname'].replace('_', ' ')
+        mob_name = row['polutils_name']
+
+        if len(mob_name) == 0:
+            mob_name = alt_name
+        
+        mob_iname = re.sub('[\'\"\-\(\)\,\. ]', '', mob_name.lower())
+        
+        if count % 1000 == 0: print(count, 'mob:', row['mobid'], mob_name, mob_iname, row['zoneid'], row['dropid'], row['respawntime'], row['minLevel'], row['maxLevel'])
+        
+        yield (row['mobid'], mob_name, mob_iname, row['zoneid'], row['dropid'], row['respawntime'], row['minLevel'], row['maxLevel'])
 
 cur.executemany('INSERT INTO mobs (mob_id, mob_name, mob_iname, zone_id, drop_id, respawn, lvl_min, lvl_max) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', mob_generator())
 
 con.commit()
 
 def drop_generator():
-  count = 0
-  for row in curTemp.execute('SELECT * FROM mob_droplist'):
-    count += 1
-    
-    if count % 1000 == 0: print(count, 'drop:', row['dropId'], row['dropType'], row['itemId'], row['itemRate'])
-    
-    yield (row['dropId'], row['dropType'], row['groupId'], row['groupRate'], row['itemId'], row['itemRate'])
+    count = 0
+    for row in curTemp.execute('SELECT * FROM mob_droplist'):
+        count += 1
+        
+        if count % 1000 == 0: print(count, 'drop:', row['dropId'], row['dropType'], row['itemId'], row['itemRate'])
+        
+        yield (row['dropId'], row['dropType'], row['groupId'], row['groupRate'], row['itemId'], row['itemRate'])
 
 cur.executemany('INSERT INTO drops (drop_id, drop_type, group_id, group_rate, item_id, item_rate) VALUES (?, ?, ?, ?, ?, ?)', drop_generator())
 
