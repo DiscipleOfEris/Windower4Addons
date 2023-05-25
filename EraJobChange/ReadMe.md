@@ -41,3 +41,9 @@ Change your sub job to the specified <job>.
     //jc blm/whm
 
 Change your main and sub job at the same time.
+
+#### reset
+
+    //jc reset
+
+Quickly toggle your subjob to recover your hp, mp, and job ability recasts.
