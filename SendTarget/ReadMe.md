@@ -87,8 +87,7 @@ regardless of their target. No `/assist` necessary!
 
 ### Compatibility with the Send addon
 
-This addon works fine with the Send addon, but it makes that addon redundant. SendTarget can do everything Send does
-and more. However, there might be times when intuitively the Send addon will do what you want. For example, let's
+This addon works fine with the Send addon, though it terms of casting spells or using abilities it makes Send redundant. However, SendTarget only captures commands with targets, so Send is still needed to order alts to do commands with no targets (such as `/join` or `/heal`). Additionally, there might be times when intuitively the Send addon will do what you want. For example, let's
 imagine we're playing on Kaiyra and have Maruru running in the background. Writing (with the Shortcuts addon)
 `//sta maruru cure me` will make Maruru heal Kaiyra. But doing `//send maruru cure me` will make Maruru heal herself.  
   
